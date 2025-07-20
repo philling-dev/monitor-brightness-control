@@ -258,13 +258,17 @@ create_desktop_entry() {
     
     cat > "$DESKTOP_DIR/monitor-control.desktop" << EOF
 [Desktop Entry]
-Name=Monitor Control
-Comment=Control external monitor brightness and contrast via DDC/CI
+Name=Monitor Brightness Control
+GenericName=Display Settings
+Comment=Adjust brightness and contrast of external monitors
 Exec=$HOME/.local/bin/monitor-gui
 Icon=preferences-desktop-display
+Terminal=false
 Type=Application
-Categories=Settings;HardwareSettings;
-Keywords=monitor;brightness;contrast;display;
+Categories=Settings;HardwareSettings;System;
+Keywords=monitor;brightness;contrast;display;screen;external;ddc;
+StartupNotify=true
+MimeType=
 EOF
     
     print_success "Desktop entry created"

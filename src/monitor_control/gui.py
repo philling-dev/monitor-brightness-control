@@ -1,6 +1,7 @@
 """Graphical user interface for monitor control."""
 
 import sys
+import math
 from typing import List, Optional
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget,
@@ -8,7 +9,7 @@ from PyQt6.QtWidgets import (
     QMessageBox, QSystemTrayIcon, QMenu, QProgressBar
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
-from PyQt6.QtGui import QIcon, QAction
+from PyQt6.QtGui import QIcon, QAction, QPixmap, QPainter, QPen, QBrush
 
 from .ddc import DDCController, DDCError, Monitor, DDCFeature
 
@@ -218,7 +219,11 @@ class MainWindow(QMainWindow):
         if not QSystemTrayIcon.isSystemTrayAvailable():
             return
         
-        self.tray_icon = QSystemTrayIcon(self)
+        # Create a simple monitor icon first
+        icon = self.create_monitor_icon()
+        
+        self.tray_icon = QSystemTrayIcon(icon, self)
+        self.setWindowIcon(icon)
         
         # Create menu
         tray_menu = QMenu()
@@ -246,6 +251,43 @@ class MainWindow(QMainWindow):
                 self.show()
                 self.raise_()
                 self.activateWindow()
+    
+    def create_monitor_icon(self) -> QIcon:
+        """Create a simple monitor icon for the system tray."""
+        pixmap = QPixmap(64, 64)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        
+        # Draw monitor outline (simple rectangle)
+        pen = QPen(Qt.GlobalColor.black, 3)
+        painter.setPen(pen)
+        painter.setBrush(QBrush(Qt.GlobalColor.lightGray))
+        
+        # Monitor screen
+        painter.drawRoundedRect(12, 12, 40, 28, 4, 4)
+        
+        # Monitor stand (simple base)
+        painter.drawRect(28, 40, 8, 6)
+        painter.drawRect(22, 46, 20, 3)
+        
+        # Brightness indicator (simple sun)
+        pen = QPen(Qt.GlobalColor.yellow, 2)
+        painter.setPen(pen)
+        painter.setBrush(QBrush(Qt.GlobalColor.yellow))
+        
+        # Sun center
+        painter.drawEllipse(28, 20, 8, 8)
+        
+        # Simple sun rays (4 lines)
+        painter.drawLine(32, 12, 32, 16)  # top
+        painter.drawLine(32, 32, 32, 36)  # bottom  
+        painter.drawLine(20, 24, 24, 24)  # left
+        painter.drawLine(40, 24, 44, 24)  # right
+        
+        painter.end()
+        return QIcon(pixmap)
     
     def detect_monitors(self):
         """Start monitor detection in background thread."""
