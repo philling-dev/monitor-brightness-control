@@ -329,6 +329,21 @@ pytest  # Run tests
 
 ---
 
+## 💖 Support the Project
+
+If this project was helpful to you, please consider supporting its development:
+
+### ☕ Buy me a coffee
+- **[coff.ee/philling](https://coff.ee/philling)**
+
+### 🪙 Bitcoin
+To donate, copy the address below:
+```
+1Lyy8GJignLbTUoTkR1HKSe8VTkzAvBMLm
+```
+
+---
+
 ## 📄 License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
