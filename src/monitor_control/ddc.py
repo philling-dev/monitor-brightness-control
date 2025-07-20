@@ -91,9 +91,25 @@ class DDCController:
     
     def _create_monitor(self, data: Dict) -> Monitor:
         """Create Monitor object from parsed data."""
+        # Smart fallback for monitor name
+        name = data.get('name')
+        if not name or name == 'Unknown':
+            # Try to build name from manufacturer and model
+            manufacturer = data.get('manufacturer', '')
+            model = data.get('model', '')
+            
+            if manufacturer and model and manufacturer != 'Unknown' and model != 'Unknown':
+                name = f"{manufacturer} {model}"
+            elif model and model != 'Unknown':
+                name = model
+            elif manufacturer and manufacturer != 'Unknown':
+                name = manufacturer
+            else:
+                name = f"Monitor on I2C-{data.get('bus', 0)}"
+        
         return Monitor(
             bus=data.get('bus', 0),
-            name=data.get('name', 'Unknown'),
+            name=name,
             manufacturer=data.get('manufacturer', 'Unknown'),
             model=data.get('model', 'Unknown'),
             serial=data.get('serial')

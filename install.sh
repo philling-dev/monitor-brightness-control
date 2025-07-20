@@ -56,16 +56,16 @@ install_system_deps() {
     case $DISTRO in
         "ubuntu"|"debian")
             sudo apt update
-            sudo apt install -y ddcutil i2c-tools python3-pip python3-venv
+            sudo apt install -y ddcutil i2c-tools python3-pip python3-venv libxcb-cursor0 python3-pyqt6
             ;;
         "fedora")
-            sudo dnf install -y ddcutil python3-pip python3-virtualenv
+            sudo dnf install -y ddcutil python3-pip python3-virtualenv python3-qt6 xcb-util-cursor
             ;;
         "arch"|"manjaro")
-            sudo pacman -S --noconfirm ddcutil python-pip
+            sudo pacman -S --noconfirm ddcutil python-pip python-pyqt6 xcb-util-cursor
             ;;
         "opensuse"|"opensuse-leap"|"opensuse-tumbleweed")
-            sudo zypper install -y ddcutil python3-pip
+            sudo zypper install -y ddcutil python3-pip python3-qt6 libxcb-cursor0
             ;;
         *)
             print_warning "Distribution not explicitly supported. Trying generic installation..."
@@ -145,13 +145,83 @@ test_ddcutil() {
 install_python_package() {
     print_status "Installing Python package..."
     
+    # Check for PEP 668 externally-managed environment
+    PEP668_ERROR=false
+    
+    # Try pipx first if available
+    if command -v pipx &> /dev/null; then
+        print_status "Using pipx for installation..."
+        if [ -f "pyproject.toml" ] && [ -d "src/monitor_control" ]; then
+            pipx install -e .
+        else
+            pipx install monitor-brightness-control
+        fi
+        print_success "Python package installed via pipx"
+        return
+    fi
+    
     # Check if we're in the source directory
     if [ -f "pyproject.toml" ] && [ -d "src/monitor_control" ]; then
         print_status "Installing from source directory..."
-        pip install --user -e .
+        if ! pip install --user -e . 2>/tmp/pip_error.log; then
+            if grep -q "externally-managed-environment" /tmp/pip_error.log; then
+                PEP668_ERROR=true
+            else
+                print_error "Installation failed. Check /tmp/pip_error.log"
+                exit 1
+            fi
+        fi
     else
         print_status "Installing from PyPI..."
-        pip install --user monitor-brightness-control
+        if ! pip install --user monitor-brightness-control 2>/tmp/pip_error.log; then
+            if grep -q "externally-managed-environment" /tmp/pip_error.log; then
+                PEP668_ERROR=true
+            else
+                print_error "Installation failed. Check /tmp/pip_error.log"
+                exit 1
+            fi
+        fi
+    fi
+    
+    # Handle PEP 668 error by creating a virtual environment
+    if [ "$PEP668_ERROR" = true ]; then
+        print_warning "PEP 668 externally-managed-environment detected"
+        print_status "Creating virtual environment for installation..."
+        
+        VENV_DIR="$HOME/.local/share/monitor-control-venv"
+        python3 -m venv "$VENV_DIR"
+        
+        # Install PyQt6 in virtual environment first
+        print_status "Installing PyQt6 in virtual environment..."
+        "$VENV_DIR/bin/pip" install PyQt6
+        
+        if [ -f "pyproject.toml" ] && [ -d "src/monitor_control" ]; then
+            print_status "Installing from source in virtual environment..."
+            "$VENV_DIR/bin/pip" install -e .
+        else
+            print_status "Installing from PyPI in virtual environment..."
+            "$VENV_DIR/bin/pip" install monitor-brightness-control
+        fi
+        
+        # Create wrapper scripts in ~/.local/bin
+        mkdir -p "$HOME/.local/bin"
+        
+        cat > "$HOME/.local/bin/monitor-control" << EOF
+#!/bin/bash
+exec "$VENV_DIR/bin/python" -m monitor_control.cli "\$@"
+EOF
+        
+        cat > "$HOME/.local/bin/monitor-gui" << EOF
+#!/bin/bash
+export QT_QPA_PLATFORM_PLUGIN_PATH="$VENV_DIR/lib/python*/site-packages/PyQt6/Qt6/plugins"
+export LD_LIBRARY_PATH="$VENV_DIR/lib/python*/site-packages/PyQt6/Qt6/lib:\$LD_LIBRARY_PATH"
+exec "$VENV_DIR/bin/python" -m monitor_control.gui "\$@"
+EOF
+        
+        chmod +x "$HOME/.local/bin/monitor-control"
+        chmod +x "$HOME/.local/bin/monitor-gui"
+        
+        print_success "Installed in virtual environment with wrapper scripts"
     fi
     
     # Make sure ~/.local/bin is in PATH
@@ -197,6 +267,13 @@ setup_systemd_service() {
         SERVICE_DIR="$HOME/.config/systemd/user"
         mkdir -p "$SERVICE_DIR"
         
+        # Determine the correct Python path
+        PYTHON_PATH="$HOME/.local/bin/python"
+        VENV_DIR="$HOME/.local/share/monitor-control-venv"
+        if [ -d "$VENV_DIR" ]; then
+            PYTHON_PATH="$VENV_DIR/bin/python"
+        fi
+        
         cat > "$SERVICE_DIR/monitor-control.service" << EOF
 [Unit]
 Description=Monitor Brightness Control Service
@@ -204,7 +281,7 @@ After=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=$HOME/.local/bin/python -m monitor_control.service start
+ExecStart=$PYTHON_PATH -m monitor_control.service start
 Restart=on-failure
 Environment="DISPLAY=:0"
 
