@@ -211,11 +211,25 @@ install_python_package() {
 exec "$VENV_DIR/bin/python" -m monitor_control.cli "\$@"
 EOF
         
+        # Detect Python version in venv
+        PYTHON_VER=$(ls "$VENV_DIR/lib/" | grep "python" | head -n1)
+        
         cat > "$HOME/.local/bin/monitor-gui" << EOF
 #!/bin/bash
-export QT_QPA_PLATFORM_PLUGIN_PATH="$VENV_DIR/lib/python*/site-packages/PyQt6/Qt6/plugins"
-export LD_LIBRARY_PATH="$VENV_DIR/lib/python*/site-packages/PyQt6/Qt6/lib:\$LD_LIBRARY_PATH"
-exec "$VENV_DIR/bin/python" -m monitor_control.gui "\$@"
+VENV_DIR="$VENV_DIR"
+PYTHON_VER="$PYTHON_VER"
+
+# Set Qt environment variables with correct paths
+export QT_QPA_PLATFORM_PLUGIN_PATH="\$VENV_DIR/lib/\$PYTHON_VER/site-packages/PyQt6/Qt6/plugins"
+export LD_LIBRARY_PATH="\$VENV_DIR/lib/\$PYTHON_VER/site-packages/PyQt6/Qt6/lib:\$LD_LIBRARY_PATH"
+
+# Fallback to system Qt if virtual env Qt fails
+if [ ! -d "\$QT_QPA_PLATFORM_PLUGIN_PATH" ]; then
+    unset QT_QPA_PLATFORM_PLUGIN_PATH
+    unset LD_LIBRARY_PATH
+fi
+
+exec "\$VENV_DIR/bin/python" -m monitor_control.gui "\$@"
 EOF
         
         chmod +x "$HOME/.local/bin/monitor-control"
