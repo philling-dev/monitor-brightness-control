@@ -56,7 +56,7 @@ install_system_deps() {
     case $DISTRO in
         "ubuntu"|"debian")
             sudo apt update
-            sudo apt install -y ddcutil i2c-tools python3-pip python3-venv libxcb-cursor0 python3-pyqt6
+            sudo apt install -y ddcutil i2c-tools python3-pip python3-venv libxcb-cursor0 libxcb-cursor-dev python3-pyqt6
             ;;
         "fedora")
             sudo dnf install -y ddcutil python3-pip python3-virtualenv python3-qt6 xcb-util-cursor
