@@ -88,7 +88,7 @@ echo 'i2c-dev' | sudo tee /etc/modules-load.d/i2c.conf
 ### Option 1: Automated Installation (Recommended)
 ```bash
 # Clone and run the installation script
-git clone https://github.com/yourusername/monitor-brightness-control.git
+git clone https://github.com/philling-dev/monitor-brightness-control.git
 cd monitor-brightness-control
 chmod +x install.sh
 ./install.sh
@@ -107,7 +107,7 @@ The script automatically:
 pip install monitor-brightness-control
 
 # Or install from source
-git clone https://github.com/yourusername/monitor-brightness-control.git
+git clone https://github.com/philling-dev/monitor-brightness-control.git
 cd monitor-brightness-control
 pip install -e .
 ```
@@ -319,7 +319,7 @@ We welcome contributions! Here's how you can help:
 
 ### Development Setup
 ```bash
-git clone https://github.com/yourusername/monitor-brightness-control.git
+git clone https://github.com/philling-dev/monitor-brightness-control.git
 cd monitor-brightness-control
 python -m venv venv
 source venv/bin/activate
@@ -359,6 +359,6 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 **Star ⭐ this repository if it helped you!**
 
-[Report Bug](https://github.com/yourusername/monitor-brightness-control/issues) • [Request Feature](https://github.com/yourusername/monitor-brightness-control/issues) • [Documentation](https://github.com/yourusername/monitor-brightness-control/wiki)
+[Report Bug](https://github.com/philling-dev/monitor-brightness-control/issues) • [Request Feature](https://github.com/philling-dev/monitor-brightness-control/issues) • [Documentation](https://github.com/philling-dev/monitor-brightness-control/wiki)
 
 </div>
