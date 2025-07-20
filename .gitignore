@@ -146,4 +146,4 @@ Thumbs.db
 
 # Project specific
 config/
-*.log
+*.log*.txt
