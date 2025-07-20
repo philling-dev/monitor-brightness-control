@@ -219,8 +219,13 @@ class MainWindow(QMainWindow):
         if not QSystemTrayIcon.isSystemTrayAvailable():
             return
         
-        # Create a simple monitor icon first
-        icon = self.create_monitor_icon()
+        # Try to create custom icon, fallback to system icon
+        try:
+            icon = self.create_monitor_icon()
+            if icon.isNull():
+                icon = QIcon.fromTheme("preferences-desktop-display")
+        except Exception:
+            icon = QIcon.fromTheme("preferences-desktop-display")
         
         self.tray_icon = QSystemTrayIcon(icon, self)
         self.setWindowIcon(icon)
